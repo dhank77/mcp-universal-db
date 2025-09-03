@@ -8,19 +8,21 @@ import {
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { TOOLS, handleToolCall } from './tools/index.js';
-import fs from 'fs';
-import path from 'path';
+import { PromptGenerator } from './utils/prompt-generator.js';
+import { SchemaReader } from './utils/schema-reader.js';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 /**
  * Register all MCP handlers on a server instance
  * This is shared across all transport types
  */
 export function registerHandlers(server: Server) {
+  const promptGenerator = new PromptGenerator();
+  const schemaReader = SchemaReader.getInstance();
+
   // Register tools handler
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: TOOLS
@@ -50,178 +52,110 @@ export function registerHandlers(server: Server) {
     }
   });
   
-  // Register prompts handler
-  server.setRequestHandler(ListPromptsRequestSchema, async () => ({
-    prompts: [
-      {
-        name: "query-employees",
-        title: "Query_Employees",
-        description: "Query employees table using natural language instructions",
-        arguments: [
-          {
-            name: "instructions",
-            description: "Natural language query instructions (e.g., 'count female employees', 'show 10 recent hires')",
-            required: true
-          }
-        ]
-      },
-      {
-        name: "insert-employee",
-        title: "Insert_Employee",
-        description: "Insert a new employee with all related information (department, title, salary)",
-        arguments: [
-          {
-            name: "employee_info",
-            description: "Employee details including name, birth date, gender, department, title, and salary",
-            required: true
-          }
-        ]
-      },
-      {
-        name: "delete-employee",
-        title: "Delete_Employee",
-        description: "Delete an employee and all related records from the database",
-        arguments: [
-          {
-            name: "employee_identifier",
-            description: "Employee number or name to delete (e.g., '10001' or 'John Smith')",
-            required: true
-          }
-        ]
-      },
-      {
-        name: "manage-departments",
-        title: "Manage_Departments",
-        description: "Insert a new department or delete an existing department",
-        arguments: [
-          {
-            name: "instructions",
-            description: "Department operation (e.g., 'add Marketing department', 'delete department d005')",
-            required: true
-          }
-        ]
-      }
-    ]
-  }));
-  
-  // Register GetPrompt handler
-  server.setRequestHandler(GetPromptRequestSchema, async (request) => {
-    if (request.params.name === "query-employees") {
-      const promptPath = path.join(__dirname, 'specs', 'query-employees.md');
-      const promptContent = fs.readFileSync(promptPath, 'utf-8');
-      
-      const userInstructions = request.params.arguments?.instructions || "";
-      const messages = [
-        {
-          role: "user" as const,
-          content: {
-            type: "text" as const,
-            text: promptContent.replace('$ARGUMENTS', userInstructions)
-          }
-        }
-      ];
-      
-      return {
-        description: "Query employees table using natural language instructions",
-        messages
-      };
+  // Register dynamic prompts handler
+  server.setRequestHandler(ListPromptsRequestSchema, async () => {
+    try {
+      const dynamicPrompts = await promptGenerator.generateDynamicPrompts();
+      return { prompts: dynamicPrompts };
+    } catch (error: any) {
+      console.error('Error generating dynamic prompts:', error);
+      return { prompts: [] };
     }
-    
-    if (request.params.name === "insert-employee") {
-      const promptPath = path.join(__dirname, 'specs', 'insert-employee-info.md');
-      const promptContent = fs.readFileSync(promptPath, 'utf-8');
-      
-      const employeeInfo = request.params.arguments?.employee_info || "";
-      const messages = [
-        {
-          role: "user" as const,
-          content: {
-            type: "text" as const,
-            text: promptContent.replace('$ARGUMENTS', employeeInfo)
-          }
-        }
-      ];
-      
-      return {
-        description: "Insert a new employee with all related information",
-        messages
-      };
-    }
-    
-    if (request.params.name === "delete-employee") {
-      const promptPath = path.join(__dirname, 'specs', 'delete-employee.md');
-      const promptContent = fs.readFileSync(promptPath, 'utf-8');
-      
-      const employeeIdentifier = request.params.arguments?.employee_identifier || "";
-      const messages = [
-        {
-          role: "user" as const,
-          content: {
-            type: "text" as const,
-            text: promptContent.replace('$ARGUMENTS', employeeIdentifier)
-          }
-        }
-      ];
-      
-      return {
-        description: "Delete an employee and all related records",
-        messages
-      };
-    }
-    
-    if (request.params.name === "manage-departments") {
-      const promptPath = path.join(__dirname, 'specs', 'manage-departments.md');
-      const promptContent = fs.readFileSync(promptPath, 'utf-8');
-      
-      const instructions = request.params.arguments?.instructions || "";
-      const messages = [
-        {
-          role: "user" as const,
-          content: {
-            type: "text" as const,
-            text: promptContent.replace('$ARGUMENTS', instructions)
-          }
-        }
-      ];
-      
-      return {
-        description: "Manage departments (insert or delete)",
-        messages
-      };
-    }
-    
-    throw new Error(`Unknown prompt: ${request.params.name}`);
   });
   
-  // Register resources handlers
-  server.setRequestHandler(ListResourcesRequestSchema, async () => ({
-    resources: [
-      {
-        uri: "bun-db-mcp://general-database",
-        name: "Database Schema",
-        description: "Complete documentation of the employee database schema including tables, relationships, and query patterns",
-        mimeType: "text/markdown"
-      }
-    ]
-  }));
-  
-  server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-    if (request.params.uri === "bun-db-mcp://general-database") {
-      const schemaPath = path.join(__dirname, 'specs', 'database-schema.md');
-      const schemaContent = fs.readFileSync(schemaPath, 'utf-8');
+  // Register dynamic GetPrompt handler
+  server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+    try {
+      const promptContent = await promptGenerator.generatePromptContent(
+        request.params.name, 
+        request.params.arguments || {}
+      );
+      
+      const messages = [
+        {
+          role: "user" as const,
+          content: {
+            type: "text" as const,
+            text: promptContent
+          }
+        }
+      ];
       
       return {
-        contents: [
-          {
-            uri: request.params.uri,
-            mimeType: "text/markdown",
-            text: schemaContent
-          }
-        ]
+        description: `Dynamic prompt for ${request.params.name}`,
+        messages
       };
+    } catch (error: any) {
+      throw new Error(`Error generating prompt ${request.params.name}: ${error.message}`);
     }
-    
-    throw new Error(`Unknown resource: ${request.params.uri}`);
+  });
+  
+  // Register dynamic resources handler
+  server.setRequestHandler(ListResourcesRequestSchema, async () => {
+    try {
+      const schema = await schemaReader.getSchema();
+      const resources = [
+        {
+          uri: "mcp-universal-db://database-schema",
+          name: "Database Schema",
+          description: "Complete database schema with all tables and relationships",
+          mimeType: "application/json"
+        }
+      ];
+      
+      // Add individual table resources
+      for (const table of schema) {
+        resources.push({
+          uri: `mcp-universal-db://table/${table.name}`,
+          name: `Table: ${table.name}`,
+          description: `Schema and information for ${table.name} table`,
+          mimeType: "application/json"
+        });
+      }
+      
+      return { resources };
+    } catch (error: any) {
+      console.error('Error listing resources:', error);
+      return { resources: [] };
+    }
+  });
+  
+  server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+    try {
+      if (request.params.uri === "mcp-universal-db://database-schema") {
+        const schema = await schemaReader.getSchema();
+        return {
+          contents: [
+            {
+              uri: request.params.uri,
+              mimeType: "application/json",
+              text: JSON.stringify(schema, null, 2)
+            }
+          ]
+        };
+      }
+      
+      const tableMatch = request.params.uri.match(/^mcp-universal-db:\/\/table\/(.+)$/);
+      if (tableMatch) {
+        const tableName = tableMatch[1];
+        const table = await schemaReader.getTableByName(tableName);
+        if (table) {
+          return {
+            contents: [
+              {
+                uri: request.params.uri,
+                mimeType: "application/json",
+                text: JSON.stringify(table, null, 2)
+              }
+            ]
+          };
+        }
+      }
+      
+      throw new Error(`Unknown resource: ${request.params.uri}`);
+    } catch (error: any) {
+      throw new Error(`Error reading resource: ${error.message}`);
+    }
   });
 }
 
@@ -231,8 +165,8 @@ export function registerHandlers(server: Server) {
 export function createMCPServer() {
   const server = new Server(
     {
-      name: "database-mcp",
-      version: "2.0.0",
+      name: "mcp-universal-db",
+      version: "1.0.0",
     },
     {
       capabilities: {
