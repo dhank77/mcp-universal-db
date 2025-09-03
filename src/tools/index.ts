@@ -55,9 +55,13 @@ export const CREATE_TOOL = {
       data: {
         type: "object",
         description: "Data to insert (key-value pairs)"
+      },
+      confirm: {
+        type: "boolean",
+        description: "Confirmation required before executing the insert operation"
       }
     },
-    required: ["table", "data"]
+    required: ["table", "data", "confirm"]
   }
 };
 
@@ -78,9 +82,13 @@ export const UPDATE_TOOL = {
       where: {
         type: "object",
         description: "WHERE conditions (key-value pairs)"
+      },
+      confirm: {
+        type: "boolean",
+        description: "Confirmation required before executing the update operation"
       }
     },
-    required: ["table", "data", "where"]
+    required: ["table", "data", "where", "confirm"]
   }
 };
 
@@ -97,9 +105,13 @@ export const DELETE_TOOL = {
       where: {
         type: "object",
         description: "WHERE conditions (key-value pairs)"
+      },
+      confirm: {
+        type: "boolean",
+        description: "Confirmation required before executing the delete operation"
       }
     },
-    required: ["table", "where"]
+    required: ["table", "where", "confirm"]
   }
 };
 
@@ -156,6 +168,10 @@ async function handleQuery(params: any) {
 }
 
 async function handleCreate(params: any) {
+  if (!params.confirm) {
+    throw new Error('Confirmation required: Set confirm=true to proceed with INSERT operation');
+  }
+  
   validateTableName(params.table);
   
   const columns = Object.keys(params.data);
@@ -171,11 +187,16 @@ async function handleCreate(params: any) {
   return {
     success: true,
     insertId: result.rows.insertId,
-    affectedRows: result.rows.affectedRows
+    affectedRows: result.rows.affectedRows,
+    message: `Successfully inserted record into ${params.table}`
   };
 }
 
 async function handleUpdate(params: any) {
+  if (!params.confirm) {
+    throw new Error('Confirmation required: Set confirm=true to proceed with UPDATE operation');
+  }
+  
   validateTableName(params.table);
   
   const dataKeys = Object.keys(params.data);
@@ -193,11 +214,16 @@ async function handleUpdate(params: any) {
   const result = await db.query(sql, values);
   return {
     success: true,
-    affectedRows: result.rows.affectedRows
+    affectedRows: result.rows.affectedRows,
+    message: `Successfully updated ${result.rows.affectedRows} record(s) in ${params.table}`
   };
 }
 
 async function handleDelete(params: any) {
+  if (!params.confirm) {
+    throw new Error('Confirmation required: Set confirm=true to proceed with DELETE operation');
+  }
+  
   validateTableName(params.table);
   
   const { clause: whereClause, values } = buildWhereClause(params.where);
@@ -207,7 +233,8 @@ async function handleDelete(params: any) {
   const result = await db.query(sql, values);
   return {
     success: true,
-    affectedRows: result.rows.affectedRows
+    affectedRows: result.rows.affectedRows,
+    message: `Successfully deleted ${result.rows.affectedRows} record(s) from ${params.table}`
   };
 }
 
