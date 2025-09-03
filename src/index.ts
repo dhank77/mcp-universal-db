@@ -2,17 +2,47 @@ import { startStdioServer } from './transports/stdio.js';
 import { startSSEServer } from './transports/sse.js';
 import { startHTTPServer } from './transports/http.js';
 import DatabaseConnection from './db/connection.js';
+import { parseEnvToDSN, parseDSNToConfig } from './utils/env-parser.js';
+import type { DatabaseConfig } from './db/types.js';
 
-// Initialize database connection
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '3306'),
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_DATABASE || 'mcp_test'
-};
+// Parse environment variables untuk multiple databases
+const databases = parseEnvToDSN(process.env as Record<string, string>);
+const dbConnections: Record<string, DatabaseConnection> = {};
 
-export const db = new DatabaseConnection(dbConfig);
+// Initialize database connections
+for (const dbEntry of databases) {
+  try {
+    const config = parseDSNToConfig(dbEntry.dsn);
+    const dbConfig: DatabaseConfig = {
+      host: config.host,
+      port: config.port,
+      user: config.user,
+      password: config.password,
+      database: config.database,
+      type: config.type
+    };
+    dbConnections[dbEntry.name] = new DatabaseConnection(dbConfig);
+  } catch (error) {
+    console.warn(`Failed to parse DSN for ${dbEntry.name}:`, error);
+  }
+}
+
+// Fallback ke konfigurasi lama jika tidak ada database yang ditemukan
+if (Object.keys(dbConnections).length === 0) {
+  const dbConfig: DatabaseConfig = {
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '3306'),
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_DATABASE || 'mcp_test',
+    type: 'mysql'
+  };
+  dbConnections['default'] = new DatabaseConnection(dbConfig);
+}
+
+// Export default database connection (first one or 'default')
+export const db = dbConnections['default'] || Object.values(dbConnections)[0];
+export const allDatabases = dbConnections;
 
 // Parse command-line arguments
 function parseArgs() {

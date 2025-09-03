@@ -4,6 +4,12 @@ export interface DatabaseConfig {
   user: string;
   password: string;
   database: string;
+  type?: 'mysql' | 'postgres';
+}
+
+export interface MultiDatabaseConfig {
+  databases: Record<string, DatabaseConfig>;
+  default?: string;
 }
 
 export interface QueryResult {
