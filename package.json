@@ -1,6 +1,6 @@
 {
   "name": "@dhank77/mcp-universal-db",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MCP universal database library",
   "main": "dist/index.js",
   "type": "module",
@@ -23,9 +23,9 @@
   "author": "M. Hamdani Ilham Latjoro",
   "license": "MIT",
   "repository": {
-      "type": "git",
-      "url": "https://github.com/dhank77/mcp-universal-db"
-   },
+    "type": "git",
+    "url": "https://github.com/dhank77/mcp-universal-db"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
     "dotenv": "^17.2.2",
