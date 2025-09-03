@@ -1,6 +1,6 @@
 {
   "name": "@dhank77/mcp-universal-db",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "MCP universal database library",
   "main": "dist/index.js",
   "type": "module",
@@ -12,6 +12,9 @@
     "test": "vitest",
     "test:db": "vitest tests/db.test.ts",
     "test:tools": "vitest tests/tools.test.ts"
+  },
+  "bin": {
+    "mcp-universal-db": "dist/index.js"
   },
   "types": "dist/index.d.ts",
   "keywords": [
