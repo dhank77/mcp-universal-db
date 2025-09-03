@@ -1,21 +1,20 @@
 {
-  "name": "bun-db-mcp",
+  "name": "mcp-universal-db",
   "module": "src/index.ts",
   "type": "module",
   "scripts": {
-    "start-stdio": "bun run src/index.ts --transport stdio",
-    "start-sse": "bun run src/index.ts --transport sse",
-    "start-http": "bun run src/index.ts --transport http",
+    "start-stdio": "npm run src/index.ts --transport stdio",
+    "start-sse": "npm run src/index.ts --transport sse",
+    "start-http": "npm run src/index.ts --transport http",
     "debug-http": "ts-node-esm src/index.ts --transport http",
-    "dev": "bun --watch src/index.ts",
-    "test": "bun test",
-    "test:db": "bun test tests/db.test.ts",
-    "test:tools": "bun test tests/tools.test.ts",
-    "test:watch": "bun test --watch",
-    "build": "bun build --outfile=dist/run.js --target=node ./src/index.ts"
+    "dev": "npm --watch src/index.ts",
+    "test": "npm test",
+    "test:db": "npm test tests/db.test.ts",
+    "test:tools": "npm test tests/tools.test.ts",
+    "test:watch": "npm test --watch",
+    "build": "npm build --outfile=dist/run.js --target=node ./src/index.ts"
   },
   "devDependencies": {
-    "@types/bun": "latest",
     "@types/node": "^24.2.0"
   },
   "peerDependencies": {
