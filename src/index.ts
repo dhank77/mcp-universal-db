@@ -11,9 +11,12 @@ const databases = parseEnvToDSN(process.env as Record<string, string>);
 const dbConnections: Record<string, DatabaseConnection> = {};
 
 // Initialize database connections
+console.error('DEBUG: Parsed databases:', databases);
 for (const dbEntry of databases) {
   try {
+    console.error(`DEBUG: Processing database ${dbEntry.name} with DSN:`, dbEntry.dsn);
     const config = parseDSNToConfig(dbEntry.dsn);
+    console.error(`DEBUG: Parsed config for ${dbEntry.name}:`, config);
     const dbConfig: DatabaseConfig = {
       host: config.host,
       port: config.port,
@@ -22,6 +25,7 @@ for (const dbEntry of databases) {
       database: config.database,
       type: config.type
     };
+    console.error(`DEBUG: Final dbConfig for ${dbEntry.name}:`, dbConfig);
     dbConnections[dbEntry.name] = new DatabaseConnection(dbConfig);
   } catch (error) {
     // Gunakan stderr untuk error logging
@@ -46,19 +50,15 @@ if (Object.keys(dbConnections).length === 0) {
 export const db = dbConnections['default'] || Object.values(dbConnections)[0];
 export const allDatabases = dbConnections;
 
-// Auto-connect to database on startup - tanpa output ke stdout
+// Use console.log for debugging since stderr might not be visible in MCP
+console.log('DEBUG: Available db connections:', Object.keys(dbConnections));
+console.log('DEBUG: Selected db instance:', db ? 'exists' : 'null');
 if (db) {
-  db.connect()
-    .then(() => {
-      // Hapus console.log yang mengganggu JSON-RPC
-      // Database connection berhasil tapi tidak perlu dicetak
-    })
-    .catch((error) => {
-      // Gunakan stderr untuk error
-      console.error('Failed to connect to database:', error);
-      console.error('Server will start but database operations will fail');
-    });
+  console.log('DEBUG: DB config type:', (db as any).config?.type);
+  console.log('DEBUG: DB config full:', (db as any).config);
 }
+
+// Database will connect lazily when first used
 
 // Main function - hanya menggunakan stdio transport
 async function main() {
