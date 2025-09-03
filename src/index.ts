@@ -5,6 +5,14 @@ import type { DatabaseConfig } from './db/types.js';
 import { config } from 'dotenv';
 
 config({ path: process.env.DOTENV_CONFIG_PATH || '.env' });
+console.log("🌍 Loaded env:", {
+  DB_TYPE: process.env.DB_CONNECTION,
+  DB_HOST: process.env.DB_HOST,
+  DB_PORT: process.env.DB_PORT,
+  DB_USER: process.env.DB_USERNAME || process.env.DB_USER,
+  DB_PASS: process.env.DB_PASSWORD || process.env.DB_PASS,
+  DB_NAME: process.env.DB_DATABASE || process.env.DB_NAME,
+});
 
 // Parse environment variables untuk multiple databases
 const databases = parseEnvToDSN(process.env as Record<string, string>);
