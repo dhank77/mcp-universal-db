@@ -1,8 +1,8 @@
-import mysql from 'mysql2/promise';
-import type { DatabaseConfig } from './types';
+import mysql from "mysql2/promise";
+import type { DatabaseConfig } from "./types";
 
 class DatabaseConnection {
-  private mysqlConnection: mysql.Connection | null = null;
+  private mysqlPool: mysql.Pool | null = null;
   private pgConnection: any | null = null;
   private config: DatabaseConfig;
 
@@ -11,8 +11,8 @@ class DatabaseConnection {
   }
 
   async connect(): Promise<void> {
-    if (this.config.type === 'postgres') {
-      const { Client } = await import('pg');
+    if (this.config.type === "postgres") {
+      const { Client } = await import("pg");
       this.pgConnection = new Client({
         host: this.config.host,
         port: this.config.port,
@@ -21,17 +21,41 @@ class DatabaseConnection {
         database: this.config.database,
       });
       await this.pgConnection.connect();
+      console.log("✅ Connected to Postgres");
     } else {
-      // Default to MySQL - filter out 'type' property
+      // Default MySQL
       const { type, ...mysqlConfig } = this.config;
-      this.mysqlConnection = await mysql.createConnection(mysqlConfig);
+
+      // Normalize host
+      if (mysqlConfig.host === "localhost") {
+        mysqlConfig.host = "127.0.0.1";
+      }
+
+      console.log("🔌 Trying MySQL connection with:", mysqlConfig);
+
+      try {
+        // Use pool instead of single connection
+        this.mysqlPool = mysql.createPool({
+          ...mysqlConfig,
+          waitForConnections: true,
+          connectionLimit: 10,
+          queueLimit: 0,
+        });
+
+        // Test query
+        const [rows] = await this.mysqlPool.query("SELECT 1");
+        console.log("✅ Connected to MySQL, test query result:", rows);
+      } catch (err: any) {
+        console.error("❌ MySQL connect failed:", err.message);
+        throw err;
+      }
     }
   }
 
   async disconnect(): Promise<void> {
-    if (this.mysqlConnection) {
-      await this.mysqlConnection.end();
-      this.mysqlConnection = null;
+    if (this.mysqlPool) {
+      await this.mysqlPool.end();
+      this.mysqlPool = null;
     }
     if (this.pgConnection) {
       await this.pgConnection.end();
@@ -40,19 +64,19 @@ class DatabaseConnection {
   }
 
   async query(sql: string, params?: any[]): Promise<any> {
-    if (this.config.type === 'postgres' && this.pgConnection) {
+    if (this.config.type === "postgres" && this.pgConnection) {
       const result = await this.pgConnection.query(sql, params);
       return { rows: result.rows, fields: result.fields };
-    } else if (this.mysqlConnection) {
-      const [rows, fields] = await this.mysqlConnection.execute(sql, params);
+    } else if (this.mysqlPool) {
+      const [rows, fields] = await this.mysqlPool.execute(sql, params);
       return { rows, fields };
     } else {
-      throw new Error('Database not connected');
+      throw new Error("Database not connected");
     }
   }
 
   isConnected(): boolean {
-    return this.mysqlConnection !== null || this.pgConnection !== null;
+    return this.mysqlPool !== null || this.pgConnection !== null;
   }
 }
 
