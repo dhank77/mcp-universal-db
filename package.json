@@ -1,6 +1,6 @@
 {
   "name": "@dhank77/mcp-universal-db",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "MCP universal database library",
   "main": "dist/index.js",
   "type": "module",
