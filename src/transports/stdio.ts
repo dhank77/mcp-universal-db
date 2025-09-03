@@ -5,5 +5,5 @@ export async function startStdioServer() {
   const server = createMCPServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("Database MCP server running on stdio");
+  console.log("Database MCP server running on stdio");
 }

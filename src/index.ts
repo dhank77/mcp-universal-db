@@ -1,9 +1,10 @@
 import { startStdioServer } from './transports/stdio.js';
-import { startSSEServer } from './transports/sse.js';
-import { startHTTPServer } from './transports/http.js';
 import DatabaseConnection from './db/connection.js';
 import { parseEnvToDSN, parseDSNToConfig } from './utils/env-parser.js';
 import type { DatabaseConfig } from './db/types.js';
+import { config } from 'dotenv';
+
+config({ path: process.env.DOTENV_CONFIG_PATH || '.env' });
 
 // Parse environment variables untuk multiple databases
 const databases = parseEnvToDSN(process.env as Record<string, string>);
@@ -23,7 +24,8 @@ for (const dbEntry of databases) {
     };
     dbConnections[dbEntry.name] = new DatabaseConnection(dbConfig);
   } catch (error) {
-    console.warn(`Failed to parse DSN for ${dbEntry.name}:`, error);
+    // Gunakan stderr untuk error logging
+    console.error(`Failed to parse DSN for ${dbEntry.name}:`, error);
   }
 }
 
@@ -40,56 +42,27 @@ if (Object.keys(dbConnections).length === 0) {
   dbConnections['default'] = new DatabaseConnection(dbConfig);
 }
 
-// Export default database connection (first one or 'default')
+// Export default database connection
 export const db = dbConnections['default'] || Object.values(dbConnections)[0];
 export const allDatabases = dbConnections;
 
-// Parse command-line arguments
-function parseArgs() {
-  const args = process.argv.slice(2);
-  const options = {
-    transport: 'stdio' as 'stdio' | 'sse' | 'http',
-    port: 3100
-  };
-  
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--transport' && args[i + 1]) {
-      const transportValue = args[i + 1].toLowerCase();
-      if (transportValue === 'stdio' || transportValue === 'sse' || transportValue === 'http') {
-        options.transport = transportValue;
-      } else {
-        console.error(`Invalid transport option: ${args[i + 1]}. Use 'stdio', 'sse', or 'http'`);
-        process.exit(1);
-      }
-      i++;
-    } else if (args[i] === '--port' && args[i + 1]) {
-      options.port = parseInt(args[i + 1]);
-      if (isNaN(options.port)) {
-        console.error(`Invalid port: ${args[i + 1]}`);
-        process.exit(1);
-      }
-      i++;
-    }
-  }
-  
-  return options;
+// Auto-connect to database on startup - tanpa output ke stdout
+if (db) {
+  db.connect()
+    .then(() => {
+      // Hapus console.log yang mengganggu JSON-RPC
+      // Database connection berhasil tapi tidak perlu dicetak
+    })
+    .catch((error) => {
+      // Gunakan stderr untuk error
+      console.error('Failed to connect to database:', error);
+      console.error('Server will start but database operations will fail');
+    });
 }
 
+// Main function - hanya menggunakan stdio transport
 async function main() {
-  const options = parseArgs();
-  
-  switch (options.transport) {
-    case 'sse':
-      await startSSEServer(options.port);
-      break;
-    case 'http':
-      await startHTTPServer(options.port);
-      break;
-    case 'stdio':
-    default:
-      await startStdioServer();
-      break;
-  }
+  await startStdioServer();
 }
 
 main().catch((error) => {
