@@ -22,8 +22,9 @@ class DatabaseConnection {
       });
       await this.pgConnection.connect();
     } else {
-      // Default to MySQL
-      this.mysqlConnection = await mysql.createConnection(this.config);
+      // Default to MySQL - filter out 'type' property
+      const { type, ...mysqlConfig } = this.config;
+      this.mysqlConnection = await mysql.createConnection(mysqlConfig);
     }
   }
 

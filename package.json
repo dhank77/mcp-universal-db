@@ -1,30 +1,35 @@
 {
   "name": "mcp-universal-db",
-  "module": "src/index.ts",
+  "version": "1.0.0",
+  "description": "MCP universal database library",
+  "main": "index.js",
   "type": "module",
   "scripts": {
-    "start-stdio": "npm run src/index.ts --transport stdio",
-    "start-sse": "npm run src/index.ts --transport sse",
-    "start-http": "npm run src/index.ts --transport http",
-    "debug-http": "ts-node-esm src/index.ts --transport http",
-    "dev": "npm --watch src/index.ts",
-    "test": "npm test",
-    "test:db": "npm test tests/db.test.ts",
-    "test:tools": "npm test tests/tools.test.ts",
-    "test:watch": "npm test --watch",
-    "build": "npm build --outfile=dist/run.js --target=node ./src/index.ts"
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "test": "vitest",
+    "test:db": "vitest tests/db.test.ts",
+    "test:tools": "vitest tests/tools.test.ts"
+  },
+  "keywords": [
+    "mcp",
+    "database",
+    "mysql",
+    "postgresql"
+  ],
+  "author": "M. Hamdani Ilham Latjoro",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "mysql2": "^3.11.4",
+    "pg": "^8.13.1"
   },
   "devDependencies": {
-    "@types/node": "^24.2.0"
-  },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
-  },
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.17.1",
-    "@types/pg": "^8.15.5",
-    "dotenv": "^17.2.1",
-    "mysql2": "^3.14.3",
-    "pg": "^8.16.3"
+    "@types/node": "^22.10.2",
+    "@types/pg": "^8.11.10",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
   }
 }

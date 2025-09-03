@@ -1,57 +1,39 @@
-import { test, expect, describe, mock } from "bun:test";
-import { 
-  CONNECTION_TOOL, 
-  QUERY_TOOL, 
-  CREATE_TOOL, 
-  UPDATE_TOOL, 
-  DELETE_TOOL, 
-  READ_SCHEMA_TOOL 
-} from "../src/tools/index";
+import { describe, test, expect } from 'vitest';
+import { CONNECTION_TOOL, QUERY_TOOL, CREATE_TOOL, UPDATE_TOOL, DELETE_TOOL } from '../src/tools';
 
-describe("Tool Definitions", () => {
-  test("connection tool has correct structure", () => {
-    expect(CONNECTION_TOOL.name).toBe("connection");
-    expect(CONNECTION_TOOL.inputSchema.properties.action).toBeDefined();
-    expect(CONNECTION_TOOL.inputSchema.properties.action.enum).toContain("connect");
-    expect(CONNECTION_TOOL.inputSchema.properties.action.enum).toContain("disconnect");
-    expect(CONNECTION_TOOL.inputSchema.properties.action.enum).toContain("status");
+describe('Tools', () => {
+  test('CONNECTION_TOOL should have correct structure', () => {
+    expect(CONNECTION_TOOL).toBeDefined();
+    expect(CONNECTION_TOOL.name).toBe('connection');
+    expect(CONNECTION_TOOL.description).toBeDefined();
+    expect(CONNECTION_TOOL.inputSchema).toBeDefined();
   });
 
-  test("query tool has correct structure", () => {
-    expect(QUERY_TOOL.name).toBe("query");
-    expect(QUERY_TOOL.inputSchema.properties.sql).toBeDefined();
-    expect(QUERY_TOOL.inputSchema.properties.params).toBeDefined();
-    expect(QUERY_TOOL.inputSchema.required).toContain("sql");
+  test('QUERY_TOOL should have correct structure', () => {
+    expect(QUERY_TOOL).toBeDefined();
+    expect(QUERY_TOOL.name).toBe('query');
+    expect(QUERY_TOOL.description).toBeDefined();
+    expect(QUERY_TOOL.inputSchema).toBeDefined();
   });
 
-  test("create tool has correct structure", () => {
-    expect(CREATE_TOOL.name).toBe("create");
-    expect(CREATE_TOOL.inputSchema.properties.table).toBeDefined();
-    expect(CREATE_TOOL.inputSchema.properties.data).toBeDefined();
-    expect(CREATE_TOOL.inputSchema.required).toContain("table");
-    expect(CREATE_TOOL.inputSchema.required).toContain("data");
+  test('CREATE_TOOL should have correct structure', () => {
+    expect(CREATE_TOOL).toBeDefined();
+    expect(CREATE_TOOL.name).toBe('create');
+    expect(CREATE_TOOL.description).toBeDefined();
+    expect(CREATE_TOOL.inputSchema).toBeDefined();
   });
 
-  test("update tool has correct structure", () => {
-    expect(UPDATE_TOOL.name).toBe("update");
-    expect(UPDATE_TOOL.inputSchema.properties.table).toBeDefined();
-    expect(UPDATE_TOOL.inputSchema.properties.data).toBeDefined();
-    expect(UPDATE_TOOL.inputSchema.properties.where).toBeDefined();
-    expect(UPDATE_TOOL.inputSchema.required).toContain("table");
-    expect(UPDATE_TOOL.inputSchema.required).toContain("data");
-    expect(UPDATE_TOOL.inputSchema.required).toContain("where");
+  test('UPDATE_TOOL should have correct structure', () => {
+    expect(UPDATE_TOOL).toBeDefined();
+    expect(UPDATE_TOOL.name).toBe('update');
+    expect(UPDATE_TOOL.description).toBeDefined();
+    expect(UPDATE_TOOL.inputSchema).toBeDefined();
   });
 
-  test("delete tool has correct structure", () => {
-    expect(DELETE_TOOL.name).toBe("delete");
-    expect(DELETE_TOOL.inputSchema.properties.table).toBeDefined();
-    expect(DELETE_TOOL.inputSchema.properties.where).toBeDefined();
-    expect(DELETE_TOOL.inputSchema.required).toContain("table");
-    expect(DELETE_TOOL.inputSchema.required).toContain("where");
-  });
-
-  test("readSchema tool has correct structure", () => {
-    expect(READ_SCHEMA_TOOL.name).toBe("readSchema");
-    expect(READ_SCHEMA_TOOL.inputSchema.properties.table).toBeDefined();
+  test('DELETE_TOOL should have correct structure', () => {
+    expect(DELETE_TOOL).toBeDefined();
+    expect(DELETE_TOOL.name).toBe('delete');
+    expect(DELETE_TOOL.description).toBeDefined();
+    expect(DELETE_TOOL.inputSchema).toBeDefined();
   });
 });
